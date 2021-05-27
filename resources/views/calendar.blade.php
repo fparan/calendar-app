@@ -11,15 +11,15 @@
                     @csrf
                     <div class="mb-3">
                         <label for="event" class="form-label">Event</label>
-                        <input type="text" class="form-control" id="event" name="event" value="{{ $event['event_name'] ?? '' }}">
+                        <input type="text" class="form-control" id="event" name="event" value="{{ $event['event_name'] ?? '' }}" required="required">
                     </div>
                     <div class="mb-3">
                         <label for="startDate" class="form-label">Start Date</label>
-                        <input type="text" class="form-control" id="startDate" name="startDate" value="{{ $event['start_date'] ?? '' }}">
+                        <input type="text" class="form-control" id="startDate" name="startDate" value="{{ $event['start_date'] ?? '' }}" required="required">
                     </div>
                     <div class="mb-3">
                         <label for="endDate" class="form-label">End Date</label>
-                        <input type="text" class="form-control" id="endDate" name="endDate" value="{{ $event['end_date'] ?? '' }}" {{ (empty($event['end_date']) ? 'disabled' : '') }}>
+                        <input type="text" class="form-control" id="endDate" name="endDate" value="{{ $event['end_date'] ?? '' }}" {{ (empty($event['end_date']) ? 'disabled' : '') }} required="required">
                     </div>
                     <div class="form-check">
                         <input class="form-check-input days" type="checkbox" value="{{ (in_array('monday', $days) ? '1' : '0') }}" id="monday" name="days[monday]">
@@ -86,7 +86,6 @@
             let event = <?= json_encode($event) ?>;
             let events = <?= json_encode($events) ?>;
             let days = <?= json_encode($days) ?>;
-            let brokenStartDate = event.start_date.split('/') || null;
 
             let startDate = moment($('#startDate').val(), 'MM/DD/YYYY');
             let endDate = moment($('#endDate').val(), 'MM/DD/YYYY');
@@ -113,7 +112,10 @@
                 minDate: new Date()
             });
 
-            if (brokenStartDate !== null) {
+            console.log(event);
+
+            if (event.length > 1) {
+                let brokenStartDate = event.start_date.split('/') || null;
                 $('#endDate').datepicker({
                     minDate: new Date(
                         parseInt(brokenStartDate[2]),
@@ -204,6 +206,17 @@
 
             $('form').on('submit', function (e) {
                 e.preventDefault();
+                let daysSelectedCount = 0;
+
+                $('.days').each(function () {
+                    if ($(this).val() == '1') {
+                        daysSelectedCount++;
+                    }
+                });
+
+                if (daysSelectedCount == 0) {
+                    toastr.error('Atleast 1 day should be selected.', 'Event')
+                }
 
                 $.ajax({
                     type: 'POST',
@@ -211,11 +224,10 @@
                     data: $(this).serializeArray(),
                     dataType: 'json',
                     encode: true,
-                    beforeSend: function () {
-                        $('#calendar').fullCalendar('removeEvents');
-                    }
                 }).done(function (response) {
                     if (response.success) {
+                        $('#calendar').fullCalendar('removeEvents');
+
                         response.data.events.forEach(function (item, index) {
                             $('#calendar').fullCalendar('renderEvent', {title: item.title, start: item.start, end: item.end}, true);
                         });

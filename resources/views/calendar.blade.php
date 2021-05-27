@@ -112,8 +112,6 @@
                 minDate: new Date()
             });
 
-            console.log(event);
-
             if (event.length > 1) {
                 let brokenStartDate = event.start_date.split('/') || null;
                 $('#endDate').datepicker({
